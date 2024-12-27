@@ -5,7 +5,6 @@ NFP is a simple file transfer protocol
 This repository provides a client and server.
 
 ## Installation
----
 
 ### Build from source:
 
@@ -16,7 +15,6 @@ cargo build
 
 
 ## Usage
----
 
 ### Server
 Start the server up with
