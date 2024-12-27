@@ -48,13 +48,6 @@ fn check_for_errors_in_response<F: Fn(&str) -> &str>(resp_result: &str, resp_hea
             std::process::exit(1);
         };
 
-        // let reason = match resp_reason.trim() {
-        //     "NOT_DIR" => "given path is not a directory",
-        //     "NO_SUCH_DIR" => "given directory does not exist",
-        //     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
-        //     _ => "not sure",
-        // };
-
         let reason = reason_match(resp_reason.trim());
         println!("Error, {reason}");
         std::process::exit(1);
@@ -152,7 +145,6 @@ fn process_response(resp: &String, command: Commands) {
 
             println!("File succesfully created on the server");
         }
-        _ => {}
     }
 }
 
@@ -175,7 +167,7 @@ fn write_request(request: String, command: Commands, mut stream: std::net::TcpSt
 fn main() {
     let args = Args::parse();
 
-    let Ok(mut stream) = std::net::TcpStream::connect(args.ip+":"+args.port.to_string().as_str()) else {
+    let Ok(stream) = std::net::TcpStream::connect(args.ip+":"+args.port.to_string().as_str()) else {
         println!("Error, couldn't find server");
         std::process::exit(1);
     };
@@ -231,45 +223,5 @@ fn main() {
             let request = format!("PUT {path_server}\n{buf} ");
             write_request(request, args.command, stream);
         }
-        _ => {}
     }
-
-    // let data = if !args.file {args.data} else {
-    //     let filename = Path::new(&args.data);
-
-    //     if !filename.exists() {
-    //         println!("Error, no such file");
-    //         std::process::exit(1);
-    //     }
-
-    //     if filename.is_dir() {
-    //         println!("Error, couldn't open file, provided filename is a directory");
-    //         std::process::exit(1);
-    //     }
-
-    //     let mut buf = String::new();
-
-    //     let mut file = std::fs::File::open(filename).unwrap();
-
-    //     if let Err(_) = file.read_to_string(&mut buf) {
-    //         println!("Error, couldn't read file");
-    //         std::process::exit(1);
-    //     }
-
-    //     buf
-    // };
-
-    // if let Err(_) = stream.write_all(data.as_bytes()) {
-    //     println!("Error, couldn't write to the stream");
-    //     std::process::exit(1);
-    // }
-
-    // let mut buf = String::new();
-
-    // if let Err(_) = stream.read_to_string(&mut buf) {
-    //     println!("Error, couldn't read the response");
-    //     std::process::exit(1);
-    // }
-
-    // println!(" Request:\n{data}\n Response:\n{buf}\n");
 }
