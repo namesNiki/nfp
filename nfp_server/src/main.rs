@@ -1,8 +1,9 @@
-use std::{io::{Read, Write}, path::Path};
+use std::{io::{Read, Write}, path::{Path, PathBuf}};
+use clap::Parser;
 
 const REQ_SIZE: usize = 1024*1024;
 
-fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) -> String {
+fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, safe_mode: Option<PathBuf>) -> String {
     let req = req.splitn(2, '\n').collect::<Vec<&str>>();
 
     let mut req_header = if let Some(req_0) = req.get(0) {
@@ -16,7 +17,6 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
         return "ERR BAD_REQ_2".to_string();
     };
 
-    println!("\"{req_type}\"");
     return match req_type.trim() {
         "GET" => {
             let mut file = if let Some(path) = req_header.next() {
@@ -27,6 +27,12 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
 
                 if !path.exists() {
                     return "ERR NO_SUCH_FILE\n".to_string();
+                }
+
+                if let Some(safe_path) = safe_mode {
+                    if !path.starts_with(safe_path) {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    }
                 }
 
                 std::fs::File::open(path).unwrap()
@@ -45,6 +51,13 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
         "PUT" => {
             if let Some(path) = req_header.next() {
                 let path = Path::new(path.trim());
+
+                if let Some(safe_path) = safe_mode {
+                    if !path.starts_with(safe_path) {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    }
+                }
+
                 let Ok(mut file) = std::fs::File::create_new(path) else {
                     return "ERR FILE_EXISTS\n".to_string();
                 };
@@ -73,6 +86,12 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
                     return "ERR IS_DIR\n".to_string();
                 }
 
+                if let Some(safe_path) = safe_mode {
+                    if !path.starts_with(safe_path) {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    }
+                }
+
                 if let Err(_) = std::fs::remove_file(path) {
                     return "ERR COULDNT_REMOVE_FILE\n".to_string();
                 }
@@ -91,6 +110,12 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
 
                 if path.is_file() {
                     return "ERR NOT_DIR\n".to_string();
+                }
+
+                if let Some(safe_path) = safe_mode {
+                    if !path.starts_with(safe_path) {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    }
                 }
 
                 if let Err(_) = std::fs::remove_dir_all(path) {
@@ -118,6 +143,14 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
                 return "ERR NO_SUCH_DIR\n".to_string();
             }
 
+            if let Some(safe_path) = safe_mode {
+                if !path.starts_with(&safe_path) {
+                    println!("{safe_path:?}");
+                    println!("{path:?}");
+                    return "ERR PERMISSION_DENIED\n".to_string();
+                }
+            }
+
             std::fs::read_dir(path).expect("ERR ????").map(|dir| dir.unwrap().path().to_str().unwrap().to_string()).fold("OK DIR\n".to_string(), |acc, el| acc + &el + "\n")
         }
         _ => {
@@ -127,7 +160,18 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream) 
 }
 
 fn main() {
-    let listener = std::net::TcpListener::bind("127.0.0.1:6969").unwrap();
+    let mut args = Args::parse();
+
+    let port = if let Some(port) = args.port {port} else {6969};
+
+    if let Some(path) = args.directory {
+        if let Err(_) = std::env::set_current_dir(path) {
+            println!("Error, couldn't change to given directory");
+            std::process::exit(1);
+        };
+    }
+
+    let listener = std::net::TcpListener::bind("127.0.0.1:".to_string()+port.to_string().as_str()).unwrap();
 
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
@@ -143,10 +187,22 @@ fn main() {
 
         let request = request.iter().map(|x| *x as char).collect::<String>().trim().to_string();
 
-        let response = process_request(&request, size, &mut stream);
+        let response = process_request(&request, size, &mut stream, args.safe.clone());
 
         stream.write(response.as_bytes()).unwrap();
 
         println!(" New connection!\n\n Request:\n{request}\n\n Response:\n{response}");
     }
+}
+
+#[derive(Parser)]
+struct Args {
+    #[arg(short, long)]
+    port: Option<u16>,
+
+    #[arg(short, long)]
+    directory: Option<PathBuf>,
+
+    #[arg(short, long)]
+    safe: Option<PathBuf>
 }

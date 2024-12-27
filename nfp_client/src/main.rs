@@ -78,6 +78,7 @@ fn process_response(resp: &String, command: Commands) {
                     "NO_SUCH_FILE" => "given file does not exist",
                     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
                     "COULDNT_READ_FILE" => "could not read the file",
+                    "PERMISSION_DENIED" => "cannot access files lower then server root",
                     _ => "not sure",
                 }
             });
@@ -95,6 +96,7 @@ fn process_response(resp: &String, command: Commands) {
                     "NOT_DIR" => "given path is not a directory",
                     "NO_SUCH_DIR" => "given directory does not exist",
                     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
+                    "PERMISSION_DENIED" => "cannot access files lower then server root",
                     _ => "not sure",
                 }
             });
@@ -113,6 +115,7 @@ fn process_response(resp: &String, command: Commands) {
                     "NO_SUCH_FILE" => "given file does not exist",
                     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
                     "COULDNT_REMOVE_FILE" => "could not remove the file",
+                    "PERMISSION_DENIED" => "cannot access files lower then server root",
                     _ => "not sure",
                 }
             });
@@ -126,6 +129,7 @@ fn process_response(resp: &String, command: Commands) {
                     "NO_SUCH_DIR" => "given directory does not exist",
                     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
                     "COULDNT_REMOVE_DIR" => "could not remove directory",
+                    "PERMISSION_DENIED" => "cannot access files lower then server root",
                     _ => "not sure",
                 }
             });
@@ -139,6 +143,7 @@ fn process_response(resp: &String, command: Commands) {
                     "MISSING_BODY" => "the data to put into the server wasnt provided by the program",
                     "COULDNT_WRITE_TO_FILE" => "couldn't write to the file",
                     "NOT_ENOUGH_ARGS" => "program didnt provide enough arguments to the server",
+                    "PERMISSION_DENIED" => "cannot access files lower then server root",
                     _ => "not sure",
                 }
             });
