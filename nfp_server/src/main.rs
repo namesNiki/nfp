@@ -145,8 +145,6 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
 
             if let Some(safe_path) = safe_mode {
                 if !path.starts_with(&safe_path) {
-                    println!("{safe_path:?}");
-                    println!("{path:?}");
                     return "ERR PERMISSION_DENIED\n".to_string();
                 }
             }
