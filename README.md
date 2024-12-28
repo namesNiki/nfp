@@ -13,6 +13,12 @@ Go into one of the two directories and type:
 cargo build
 ```
 
+The two binaries (server and client) can be compiled and placed into ```/usr/bin``` using:
+
+```
+./install.sh
+```
+
 
 ## Usage
 
@@ -22,6 +28,16 @@ Start the server up with
 ```
 ./nfp_server
 ```
+
+The server accepts a couple of flags
+
+```-p``````--port``` - Specifies the port onto which the server binds (default 6969)
+```-i``````--ip``` - Specifies the ip address onto which the server binds (default 6969)
+
+```-d``````--directory``` - Specifies the working directory of the server. All of the requests to the server will use this directory as their base
+
+```-s``````--safe``` - Specifies the safe directory. Requests cannot access files lower then this directory. By default, safe mode is disabled
+
 
 ### Client
 Example usage:
