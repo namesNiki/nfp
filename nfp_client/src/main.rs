@@ -200,7 +200,7 @@ fn main() {
             write_request(request, args.command, stream);
         }
         Commands::Rmr { path_server } => {
-            let request = format!("RM {path_server} ");
+            let request = format!("RMR {path_server} ");
             write_request(request, args.command, stream);
         }
         Commands::Cp { path_server, path_client } => {
