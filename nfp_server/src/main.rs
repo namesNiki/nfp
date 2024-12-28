@@ -30,7 +30,10 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
                 }
 
                 if let Some(safe_path) = safe_mode {
-                    if !path.starts_with(safe_path) {
+                    let Ok(canon_path) = path.canonicalize() else {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    };
+                    if !canon_path.starts_with(&safe_path) {
                         return "ERR PERMISSION_DENIED\n".to_string();
                     }
                 }
@@ -53,7 +56,10 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
                 let path = Path::new(path.trim());
 
                 if let Some(safe_path) = safe_mode {
-                    if !path.starts_with(safe_path) {
+                    let Ok(canon_path) = path.canonicalize() else {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    };
+                    if !canon_path.starts_with(&safe_path) {
                         return "ERR PERMISSION_DENIED\n".to_string();
                     }
                 }
@@ -87,10 +93,14 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
                 }
 
                 if let Some(safe_path) = safe_mode {
-                    if !path.starts_with(safe_path) {
+                    let Ok(canon_path) = path.canonicalize() else {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    };
+                    if !canon_path.starts_with(&safe_path) {
                         return "ERR PERMISSION_DENIED\n".to_string();
                     }
                 }
+
 
                 if let Err(_) = std::fs::remove_file(path) {
                     return "ERR COULDNT_REMOVE_FILE\n".to_string();
@@ -113,7 +123,10 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
                 }
 
                 if let Some(safe_path) = safe_mode {
-                    if !path.starts_with(safe_path) {
+                    let Ok(canon_path) = path.canonicalize() else {
+                        return "ERR PERMISSION_DENIED\n".to_string();
+                    };
+                    if !canon_path.starts_with(&safe_path) {
                         return "ERR PERMISSION_DENIED\n".to_string();
                     }
                 }
@@ -144,7 +157,10 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
             }
 
             if let Some(safe_path) = safe_mode {
-                if !path.starts_with(&safe_path) {
+                let Ok(canon_path) = path.canonicalize() else {
+                    return "ERR PERMISSION_DENIED\n".to_string();
+                };
+                if !canon_path.starts_with(&safe_path) {
                     return "ERR PERMISSION_DENIED\n".to_string();
                 }
             }
@@ -160,7 +176,13 @@ fn process_request(req: &String, size: usize, stream: &mut std::net::TcpStream, 
 fn main() {
     let mut args = Args::parse();
 
+    args.safe = if let Some(path) = args.safe {
+        Some(path.canonicalize().expect("Error, could not canonicalize safe directory. Provided path might have been a file, or doesnt exist"))
+    } else {None};
+
+
     let port = if let Some(port) = args.port {port} else {6969};
+    let ip = if let Some(ip) = args.ip {ip} else {"127.0.0.1".to_string()};
 
     if let Some(path) = args.directory {
         if let Err(_) = std::env::set_current_dir(path) {
@@ -169,7 +191,7 @@ fn main() {
         };
     }
 
-    let listener = std::net::TcpListener::bind("127.0.0.1:".to_string()+port.to_string().as_str()).unwrap();
+    let listener = std::net::TcpListener::bind(ip+":"+port.to_string().as_str()).unwrap();
 
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
@@ -197,6 +219,9 @@ fn main() {
 struct Args {
     #[arg(short, long)]
     port: Option<u16>,
+
+    #[arg(short, long)]
+    ip: Option<String>,
 
     #[arg(short, long)]
     directory: Option<PathBuf>,
